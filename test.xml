@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Behavior>
+  <Node Class="Brainiac.Design.Nodes.Behavior">
+    <Connector Identifier="GenericChildren">
+      <Node Class="Vampire.Composites.Selector">
+        <Connector Identifier="GenericChildren">
+          <Node Class="Vampire.Composites.Sequence">
+            <Connector Identifier="GenericChildren">
+              <Node Class="Vampire.Conditions.HasTarget" />
+              <Node Class="Vampire.Actions.Attack" />
+            </Connector>
+          </Node>
+          <Node Class="Vampire.Composites.Selector">
+            <Connector Identifier="GenericChildren">
+              <Node Class="Vampire.Conditions.IsAttacked" />
+              <Node Class="Vampire.Conditions.HasTarget" />
+              <Node Class="Vampire.Actions.EndFight" />
+            </Connector>
+          </Node>
+          <Node Class="Vampire.Decorators.Loop" Count="1">
+            <Connector Identifier="GenericChildren">
+              <Node Class="Vampire.Composites.Alternate">
+                <Connector Identifier="GenericChildren">
+                  <Node Class="Vampire.Actions.Attack" />
+                  <Node Class="Vampire.Actions.ChooseFarthestSkill" />
+                </Connector>
+              </Node>
+            </Connector>
+          </Node>
+        </Connector>
+      </Node>
+    </Connector>
+  </Node>
+</Behavior>
