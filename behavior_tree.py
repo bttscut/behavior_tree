@@ -1,5 +1,6 @@
 #coding=utf-8
 import xml.etree.ElementTree as ET
+import sys
 
 TYPES_ = {
     'int': int,
@@ -43,13 +44,16 @@ def make_parallel(node):
 def make_alternate(node):
     funcs = [parse_node(child) for child in node[0]]
     def alternate(robot):
-        i = 0
+        if not hasattr(robot, '_alternate_i'):
+            setattr(robot, '_alternate_i', 0)
         while True:
+            i = robot._alternate_i
             func = funcs[i]
             yield func(robot)
             i += 1
             if i >= len(funcs):
                 i = 0
+            robot._alternate_i = i
     return alternate
 
 def extract_keywords(node):
@@ -80,7 +84,11 @@ def make_action(node, name):
     keywords = extract_keywords(node)
     def action(robot):
         method = getattr(robot, func_name)
-        return method(**keywords)
+        try:
+            return method(**keywords)
+        except Exception, e:
+            print >> sys.stderr, e
+            return False
     action.func_name = func_name
     return action
 
@@ -130,6 +138,13 @@ def parse_xml(path):
 
 
 if __name__ == '__main__':
-    parse_xml('test.xml')
+    root = parse_xml('test.xml')
+    import functools
+    class Robot(object):
+        def __getattr__(self, name):
+            print name
+            return functools.partial(lambda self: True, self)
+    robot = Robot()
+    root(robot)
 
 
