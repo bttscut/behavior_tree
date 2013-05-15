@@ -45,15 +45,14 @@ def make_alternate(node):
     funcs = [parse_node(child) for child in node[0]]
     def alternate(robot):
         if not hasattr(robot, '_alternate_i'):
-            setattr(robot, '_alternate_i', 0)
-        while True:
-            i = robot._alternate_i
-            func = funcs[i]
-            yield func(robot)
-            i += 1
-            if i >= len(funcs):
-                i = 0
-            robot._alternate_i = i
+            robot._alternate_i = 0
+        i = robot._alternate_i
+        func = funcs[i]
+        i += 1
+        if i >= len(funcs):
+            i = 0
+        robot._alternate_i = i
+        return func(robot)
     return alternate
 
 def extract_keywords(node):
@@ -71,25 +70,23 @@ def extract_keywords(node):
     return keywords
 
 def make_condition(node, name):
-    func_name = name.lower()
     keywords = extract_keywords(node)
     def condition(robot):
-        method = getattr(robot, func_name)
+        method = getattr(robot, name)
         return method(**keywords)
-    condition.func_name = func_name
+    condition.func_name = name
     return condition
 
 def make_action(node, name):
-    func_name = name.lower()
     keywords = extract_keywords(node)
     def action(robot):
-        method = getattr(robot, func_name)
+        method = getattr(robot, name)
         try:
             return method(**keywords)
         except Exception, e:
             print >> sys.stderr, e
             return False
-    action.func_name = func_name
+    action.func_name = name
     return action
 
 
@@ -104,7 +101,7 @@ def parse_composites(node, name):
         return make_alternate(node)
     raise Exception('Unknown Composite Node', name)
 
-def make_loot(node):
+def make_loop(node):
     child = node[0][0]
     func = parse_node(child)
     count = int(node.attrib['Count'])
@@ -114,7 +111,7 @@ def make_loot(node):
 
 def parse_decorators(node, name):
     if name == 'Loop':
-        return make_loot(node)
+        return make_loop(node)
     raise Exception('Unknown Decorator Node', name)
 
 def parse_node(node):
