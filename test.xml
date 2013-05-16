@@ -12,7 +12,7 @@
           </Node>
           <Node Class="Vampire.Composites.Selector">
             <Connector Identifier="GenericChildren">
-              <Node Class="Vampire.Conditions.IsAttacked" />
+              <Node Class="Vampire.Conditions.IsAttacked" range="5" _range_type="int"/>
               <Node Class="Vampire.Conditions.HasTarget" />
               <Node Class="Vampire.Actions.EndFight" />
             </Connector>

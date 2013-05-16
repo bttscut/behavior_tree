@@ -1,5 +1,11 @@
 require('LuaXml')
 
+TYPES_ = {
+    int = tonumber,
+    float = tonumber,
+    str = tostring,
+}
+
 function split(str, pat)
     local t = {}  -- NOTE: use {n = 0} in Lua-5.0
     local fpat = '(.-)' .. pat
@@ -125,6 +131,16 @@ end
 
 function extract_keywords(node)
     local keywords = {}
+    for key in pairs(node) do
+        if (type(key) ~= 'number' and
+                key ~= 'Class' and
+                key:sub(1, 1) ~= '_') then
+            local type_key_name = '_' .. key .. '_type'
+            local type_name = node[type_key_name]
+            local type_ = TYPES_[type_name]
+            keywords[key]  = type_(node[key])
+        end
+    end
     return keywords
 end
 
@@ -153,7 +169,7 @@ function make_action(node, name)
 end
 
 function parse_node(node)
-    print(node.Class)
+    --print(node.Class)
     local _, node_type, node_name = unpack(split(node.Class, '%.'))
     if node_type == 'Composites' then
         return parse_composites(node, node_name)
@@ -167,10 +183,14 @@ function parse_node(node)
     error('Unknown Type Node' .. node_type)
 end
 
-local function main()
-    local root = xml.load("test.xml")
+function parse_xml(path)
+    local root = xml.load(path)
     local node = root[1][1][1]
-    parse_node(node)
+    return parse_node(node)
+end
+
+local function main()
+    parse_xml('test.xml')
 end
 
 main()

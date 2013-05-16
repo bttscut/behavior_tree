@@ -63,10 +63,10 @@ def extract_keywords(node):
             continue
         if key.startswith('_'):
             continue
-        type_key_name = '_' + key + 'Type'
+        type_key_name = '_' + key + '_type'
         type_name = attrib[type_key_name]
         type_ = TYPES_[type_name]
-        keywords[key.lower()]  = type_(value)
+        keywords[key]  = type_(value)
     return keywords
 
 def make_condition(node, name):
