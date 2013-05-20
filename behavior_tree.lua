@@ -1,12 +1,17 @@
 require('LuaXml')
 
+local modname = ... or 'behavior_tree'
+local M = {}
+_G[modname] = M
+package.loaded[modname] = M
+
 TYPES_ = {
     int = tonumber,
     float = tonumber,
     str = tostring,
 }
 
-function split(str, pat)
+function split (str, pat)
     local t = {}  -- NOTE: use {n = 0} in Lua-5.0
     local fpat = '(.-)' .. pat
     local last_end = 1
@@ -25,7 +30,7 @@ function split(str, pat)
     return t
 end
 
-function parse_child_nodes(node)
+function parse_child_nodes (node)
     local funcs = {}
     for i, child in ipairs(node[1]) do
         funcs[i] = parse_node(child)
@@ -33,9 +38,9 @@ function parse_child_nodes(node)
     return funcs
 end
 
-function make_selector(node)
+function make_selector (node)
     local funcs = parse_child_nodes(node)
-    function selector(robot)
+    return function (robot)
         for func in funcs do
             result = func(robot)
             if result then
@@ -44,12 +49,11 @@ function make_selector(node)
         end
         return false
     end
-    return selector
 end
 
-function make_sequence(node)
+function make_sequence (node)
     local funcs = parse_child_nodes(node)
-    function sequence(robot)
+    return function (robot)
         for func in funcs do
             result = func(robot)
             if not result then
@@ -58,12 +62,11 @@ function make_sequence(node)
         end
         return true
     end
-    return sequence
 end
 
-function make_parallel(node)
+function make_parallel (node)
     local funcs = parse_child_nodes(node)
-    local function parallel(robot)
+    return function (robot)
         local results = {}
         for i, func in ipairs(funcs) do
             results[i] = func(robot)
@@ -75,12 +78,11 @@ function make_parallel(node)
             return true
         end
     end
-    return parallel
 end
 
-function make_alternate(node)
+function make_alternate (node)
     local funcs = parse_child_nodes(node)
-    local function alternate(robot)
+    return function (robot)
         robot._alternate_i = robot._alternate_i or 1
         local i = robot._alternate_i
         local func = funcs[i]
@@ -91,10 +93,9 @@ function make_alternate(node)
         robot._alternate_i = i
         return func(robot)
     end
-    return alternate
 end
 
-function parse_composites(node, name)
+function parse_composites (node, name)
     if name == 'Selector' then
         return make_selector(node)
     elseif name == 'Sequence' then
@@ -107,11 +108,11 @@ function parse_composites(node, name)
     error('Unknown Composite Node' .. name)
 end
 
-function make_loop(node)
+function make_loop (node)
     local child = node[1][1]
     local func = parse_node(child)
     local count = tonumber(node.Count)
-    local function loop(robot)
+    return function (robot)
         for i=1,count do
             if not func(rebot) then
                 return false
@@ -119,17 +120,16 @@ function make_loop(node)
         end
         return true
     end
-    return loop
 end
 
-function parse_decorators(node, name)
+function parse_decorators (node, name)
     if name == 'Loop' then
         return make_loop(node)
     end
     error('Unknown Decorator Node' .. name)
 end
 
-function extract_keywords(node)
+function extract_keywords (node)
     local keywords = {}
     for key in pairs(node) do
         if (type(key) ~= 'number' and
@@ -144,18 +144,17 @@ function extract_keywords(node)
     return keywords
 end
 
-function make_condition(node, name)
+function make_condition (node, name)
     local keywords = extract_keywords(node)
-    local function condition(robot)
+    return function (robot)
         local method = robot[name]
         return method(keywords)
     end
-    return condition
 end
 
-function make_action(node, name)
+function make_action (node, name)
     local keywords = extract_keywords(node)
-    local function action(robot)
+    return function (robot)
         local method = getattr(robot, name)
         local result = pcall(method, keywords)
         if result[1] then
@@ -165,10 +164,9 @@ function make_action(node, name)
             return false
         end
     end
-    return action
 end
 
-function parse_node(node)
+function parse_node (node)
     --print(node.Class)
     local _, node_type, node_name = unpack(split(node.Class, '%.'))
     if node_type == 'Composites' then
@@ -183,16 +181,16 @@ function parse_node(node)
     error('Unknown Type Node' .. node_type)
 end
 
-function parse_xml(path)
+function M.parse_xml (path)
     local root = xml.load(path)
     local node = root[1][1][1]
     return parse_node(node)
 end
 
-local function main()
-    parse_xml('test.xml')
-end
 
-main()
+local what = debug.getinfo(1, 'S').what
+if what == 'main' then
+    M.parse_xml('test.xml')
+end
 
 
