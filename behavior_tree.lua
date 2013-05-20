@@ -1,9 +1,5 @@
+module(... or 'behavior_tree', package.seeall)
 require('LuaXml')
-
-local modname = ... or 'behavior_tree'
-local M = {}
-_G[modname] = M
-package.loaded[modname] = M
 
 TYPES_ = {
     int = tonumber,
@@ -11,7 +7,7 @@ TYPES_ = {
     str = tostring,
 }
 
-function split (str, pat)
+local function split (str, pat)
     local t = {}  -- NOTE: use {n = 0} in Lua-5.0
     local fpat = '(.-)' .. pat
     local last_end = 1
@@ -181,7 +177,7 @@ function parse_node (node)
     error('Unknown Type Node' .. node_type)
 end
 
-function M.parse_xml (path)
+function parse_xml (path)
     local root = xml.load(path)
     local node = root[1][1][1]
     return parse_node(node)
@@ -190,7 +186,7 @@ end
 
 local what = debug.getinfo(1, 'S').what
 if what == 'main' then
-    M.parse_xml('test.xml')
+    parse_xml('test.xml')
 end
 
 
